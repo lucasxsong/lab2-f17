@@ -105,7 +105,11 @@ exec(char *path, char **argv)
   curproc->sz = sz;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
-  switchuvm(curproc);
+// add next 2 lines for lab 3
+curproc->stackPages = 1;
+  cprintf("Initial number of pages by the process: %d\n", curproc->stackPages);
+ 
+ switchuvm(curproc);
   freevm(oldpgdir);
   return 0;
 

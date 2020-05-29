@@ -335,7 +335,27 @@ copyuvm(pde_t *pgdir, uint sz)
     if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0)
       goto bad;
   }
-  return d;
+// add for lab 3
+// stack is now under KERNBASE, we need to copy all
+// pages of the stack start from kernbase - 1 up to where the stack pages end
+ uint stackTop = STACKBASE - (myproc()->stackPages * PGSIZE);
+  for(i = STACKBASE; i > stackTop; i -= PGSIZE) {
+    if((pte = walkpgdir(pgdir, (void*) i, 0)) == 0)
+      panic("copyuvm: pte should exist");
+    if(!(*pte & PTE_P))
+      panic("copyuvm: page not present");
+    pa = PTE_ADDR(*pte);
+    flags = PTE_FLAGS(*pte);
+    if((mem = kalloc()) == 0)
+      goto bad;
+    memmove(mem, (char*)P2V(pa), PGSIZE);
+    if(mappages(d, (void*) PGROUNDDOWN(i), PGSIZE, V2P(mem), flags) < 0) {
+      kfree(mem);
+      goto bad;
+    }
+  }
+  
+return d;
 
 bad:
   freevm(d);
